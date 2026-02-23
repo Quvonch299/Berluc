@@ -1,0 +1,29 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+@import "tailwindcss";
+
+body {
+  font-family: "Montserrat", sans-serif;
+}
+
+html,
+body {
+  scroll-behavior: smooth;
+}
+
+button,
+svg {
+  cursor: pointer;
+}
+
+input {
+  outline: none;
+}
+
+.custom-gap {
+  gap: 40px;
+}
+@media (max-width: 1600px) {
+  .custom-gap {
+    gap: 20px;
+  }
+}

@@ -10,10 +10,15 @@ export default function Register() {
   const handleRegister = (e) => {
     e.preventDefault();
 
+    if (typeof window === "undefined") return;
+
+    // Foydalanuvchi ma'lumotlarini saqlash
     const user = { email, password, image };
     localStorage.setItem("user", JSON.stringify(user));
-    localStorage.setItem("loggedIn", "true"); 
-    navigate("/"); 
+    localStorage.setItem("loggedIn", "true");
+
+    alert("Ro‘yxatdan o‘tish muvaffaqiyatli ✅");
+    navigate("/profile"); // Profil sahifaga yo‘naltirish
   };
 
   const handleImageChange = (e) => {

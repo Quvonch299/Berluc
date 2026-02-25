@@ -8,12 +8,15 @@ export default function Login() {
 
   const handleLogin = (e) => {
     e.preventDefault();
+
+    if (typeof window === "undefined") return;
+
     const user = JSON.parse(localStorage.getItem("user"));
 
     if (user && user.email === email && user.password === password) {
-      localStorage.setItem("loggedIn", "true"); // tizimga kirganligini saqlash
+      localStorage.setItem("loggedIn", "true");
       alert("Login successful ✅");
-      navigate("/profile"); // profile sahifaga yo‘naltirish
+      navigate("/profile");
     } else {
       alert("Email yoki parol noto‘g‘ri ❌");
     }

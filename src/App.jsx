@@ -1,16 +1,12 @@
 import React from "react";
-import Navbar from "./components/navbar";
 import { Route, Routes } from "react-router-dom";
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Contacts from "./pages/Contacts";
-import Galery from "./pages/Galery";
-import GaleryDetails from "./pages/GaleryDetails";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import Projects from "./pages/Projects";
-import ProjectDetails from "./pages/ProjectDetails";
-import Services from "./pages/Services";
+import Navbar from "./components/navbar";
 import Footer from "./components/footer";
+
+import Home from "./pages/Home";
+import Register from "./pages/Register";
+import Login from "./pages/login";
+import Profile from "./Profile";
 
 export default function App() {
   return (
@@ -18,14 +14,9 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/project-detail" element={<ProjectDetails />} />
-        <Route path="/services" element={<Services />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contacts" element={<Contacts />} />
-        <Route path="/galery" element={<Galery />} />
-        <Route path="/galery-detail" element={<GaleryDetails />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
       <Footer />
     </>

@@ -1,89 +1,145 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import Button from "../ui/button";
-import { IoIosMenu, IoLogoWhatsapp } from "react-icons/io";
-import { RiTelegram2Fill } from "react-icons/ri";
-import { FaInstagram, FaYoutube } from "react-icons/fa";
-import { IoLogoTiktok } from "react-icons/io5";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { IoIosMenu } from "react-icons/io";
 import { AiOutlineClose } from "react-icons/ai";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
-  const [showButtons, setShowButtons] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const containerRef = useRef(null);
-
+  const [user, setUser] = useState(null);
+  const [dropdown, setDropdown] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Toggle social buttons
-  const handleClick = () => setShowButtons(!showButtons);
-  // Toggle mobile menu
   const handleClickMenu = () => setShowMenu(!showMenu);
-  // Open modal
-  const handleModalOpen = () => {
-    setModalOpen(true);
-    setShowButtons(false);
-    setShowMenu(false);
-  };
-  // Close modal
-  const handleModalClose = () => setModalOpen(false);
 
-  // Close menus on route change
+  // Foydalanuvchi ma'lumotlarini olish va online users
   useEffect(() => {
-    setShowButtons(false);
     setShowMenu(false);
-    window.scrollTo(0, 0);
+    setDropdown(false);
+
+    const loggedUser = JSON.parse(localStorage.getItem("user"));
+    const loggedIn = localStorage.getItem("loggedIn");
+
+    if (loggedUser && loggedIn === "true") {
+      setUser(loggedUser);
+    } else {
+      setUser(null);
+    }
+
+    const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+    setOnlineUsers(allUsers.filter(u => u.loggedIn));
   }, [location.pathname]);
 
-  // Click outside to close social buttons
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setShowButtons(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const toggleDropdown = () => setDropdown(prev => !prev);
+
+  const confirmLogout = () => {
+    const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+    const updatedUsers = allUsers.map(u =>
+      u.email === user.email ? { ...u, loggedIn: false } : u
+    );
+    localStorage.setItem("allUsers", JSON.stringify(updatedUsers));
+    localStorage.removeItem("loggedIn");
+    localStorage.removeItem("user"); // Qo'shimcha: user ni ham o'chirib tashlash
+    setUser(null);
+    setShowLogoutModal(false);
+    navigate("/login");
+  };
+
+  const handleLogoutClick = () => {
+    setDropdown(false); // Dropdown ni yopish
+    setShowLogoutModal(true);
+  };
+
+  // Admin: foydalanuvchini o'chirish
+  const removeUser = (email) => {
+    const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+    const updatedUsers = allUsers.filter(u => u.email !== email);
+    localStorage.setItem("allUsers", JSON.stringify(updatedUsers));
+    setOnlineUsers(updatedUsers.filter(u => u.loggedIn));
+  };
 
   return (
-    <div
-      ref={containerRef}
-      className="max-w-[1920px] mx-auto px-22 h-22 grid grid-cols-3 items-center relative max-md:px-4 max-md:h-[50px] max-md:border-b max-md:border-[#f3f3f3]"
-    >
-      {/* Desktop links */}
-      <ul className="flex custom-gap max-md:hidden">
-        <li><Link to={"/"}>Главная</Link></li>
-        <li><Link to={"/projects"}>Проекты</Link></li>
-        <li><Link to={"/services"}>Услуги</Link></li>
-        <li><Link to={"/about"}>О&nbsp;нас</Link></li>
-        <li><Link to={"/contacts"}>Контакты</Link></li>
-        <li><Link to={"/galery"}>Галерея</Link></li>
+    <div className="max-w-7xl m-auto  h-20 flex items-center justify-between relative  "> {/* Ko'rinishni yaxshilash: shadow qo'shildi */}
+      <Link to="/">
+<img src="/logo.jpg" className="w-[80px] h-[78px]" alt=""/>
+      </Link> 
+      <ul className="hidden md:flex gap-8 font-medium">
+        <li><Link to="/" className="hover:text-blue-600 transition">Bosh sahifa</Link></li>
+        <li><Link to="/courses" className="hover:text-blue-600 transition">Kurslar</Link></li>
+        <li><Link to="/mentors" className="hover:text-blue-600 transition">Mentorlar</Link></li>
+        <li><Link to="/contact" className="hover:text-blue-600 transition">Aloqa</Link></li>
       </ul>
 
-      {/* Mobile social icons */}
-      <div className="md:hidden flex gap-2">
-        <a href="https://wa.me/998901234567" target="_blank" rel="noopener noreferrer">
-          <IoLogoWhatsapp className="text-lg" />
-        </a>
-        <a href="https://t.me/your_telegram_username" target="_blank" rel="noopener noreferrer">
-          <RiTelegram2Fill className="text-lg" />
-        </a>
+      {/* Desktop Auth / Profile */}
+      <div className="hidden md:flex items-center gap-4 relative">
+        {user ? (
+          <div className="relative">
+            {user.image && (
+              <img
+                src={user.image}
+                alt="profile"
+                className="w-10 h-10 rounded-full object-cover cursor-pointer border-2 border-blue-600" // Ko'rinishni yaxshilash: border qo'shildi
+                onClick={toggleDropdown}
+              />
+            )}
+            {dropdown && (
+              <div className="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg py-2 flex flex-col z-50 border border-gray-200"> {/* Ko'rinishni yaxshilash: border qo'shildi */}
+                <Link to="/profile/edit" className="px-4 py-2 hover:bg-blue-100 transition">Profilni tahrirlash</Link> {/* Profil edit qilish uchun yangi link qo'shildi */}
+                <button
+                  onClick={handleLogoutClick}
+                  className="px-4 py-2 text-left hover:bg-red-100 transition text-red-600"
+                >
+                  Chiqish
+                </button>
+
+                {/* Faqat admin uchun online users */}
+                {user.email === "admin@example.com" && (
+                  <>
+                    <hr className="my-2"/>
+                    <p className="px-4 py-1 text-gray-500 font-medium">Online foydalanuvchilar:</p>
+                    {onlineUsers.length === 0 ? (
+                      <p className="px-4 py-1 text-gray-400 text-sm">Hech kim yo'q</p>
+                    ) : (
+                      onlineUsers.map(u => (
+                        <div key={u.email} className="flex justify-between items-center px-4 py-1 hover:bg-gray-50 transition"> {/* Hover effect qo'shildi */}
+                          <span className="text-sm">{u.email}</span>
+                          <button
+                            onClick={() => removeUser(u.email)}
+                            className="text-red-500 text-xs hover:underline"
+                          >
+                            O'chirish
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <Link
+              to="/login"
+              className="px-5 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-100 transition"
+            >
+              Kirish
+            </Link>
+            <Link
+              to="/register"
+              className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              Ro'yxatdan o'tish
+            </Link>
+          </>
+        )}
       </div>
 
-      {/* Logo */}
-      <div className="flex justify-center">
-        <img src="/logo.svg" alt="Logo" className="max-md:h-[18px]" />
-      </div>
-
-      {/* Desktop "Написать нам" button */}
-      <div className="flex justify-end max-md:hidden">
-        <Button width="180px" text="Написать нам" onClick={handleClick} />
-      </div>
-
-      {/* Mobile menu icon */}
-      <div className="md:hidden flex justify-end text-2xl">
+      {/* Mobile Menu Icon */}
+      <div className="md:hidden text-3xl cursor-pointer">
         {!showMenu ? (
           <IoIosMenu onClick={handleClickMenu} />
         ) : (
@@ -95,126 +151,92 @@ export default function Navbar() {
       <AnimatePresence>
         {showMenu && (
           <motion.div
-            className="px-6 py-8 flex flex-col gap-4 absolute right-0 w-full bg-white top-[50px] z-[999]"
+            className="absolute top-20 left-0 w-full bg-white shadow-md flex flex-col gap-4 p-6 z-50 border-t border-gray-200" // Ko'rinishni yaxshilash: border qo'shildi
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <Link to={"/"} onClick={() => setShowMenu(false)}>Главная</Link>
-            <Link to={"/projects"} onClick={() => setShowMenu(false)}>Проекты</Link>
-            <Link to={"/services"} onClick={() => setShowMenu(false)}>Услуги</Link>
-            <Link to={"/about"} onClick={() => setShowMenu(false)}>О&nbsp;нас</Link>
-            <Link to={"/contacts"} onClick={() => setShowMenu(false)}>Контакты</Link>
-            <Link to={"/galery"} onClick={() => setShowMenu(false)}>Галерея</Link>
+            <Link to="/" onClick={() => setShowMenu(false)} className="hover:text-blue-600 transition">Bosh sahifa</Link>
+            <Link to="/courses" onClick={() => setShowMenu(false)} className="hover:text-blue-600 transition">Kurslar</Link>
+            <Link to="/mentors" onClick={() => setShowMenu(false)} className="hover:text-blue-600 transition">Mentorlar</Link>
+            <Link to="/contact" onClick={() => setShowMenu(false)} className="hover:text-blue-600 transition">Aloqa</Link>
+
+            <hr />
+
+            {user ? (
+              <>
+                {user.image && (
+                  <img
+                    src={user.image}
+                    alt="profile"
+                    className="w-10 h-10 rounded-full object-cover mx-auto border-2 border-blue-600" // Ko'rinishni yaxshilash: border qo'shildi
+                  />
+                )}
+                <Link to="/profile" onClick={() => setShowMenu(false)} className="text-center hover:text-blue-600 transition">Profil</Link>
+                <Link to="/profile/edit" onClick={() => setShowMenu(false)} className="text-center hover:text-blue-600 transition">Profilni tahrirlash</Link> {/* Profil edit qilish uchun yangi link qo'shildi */}
+                <button
+                  onClick={() => { setShowMenu(false); setShowLogoutModal(true); }}
+                  className="bg-red-500 text-white text-center py-2 rounded-lg hover:bg-red-600 transition"
+                >
+                  Chiqish
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-blue-600 font-medium hover:text-blue-800 transition"
+                  onClick={() => setShowMenu(false)}
+                >
+                  Kirish
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700 transition"
+                  onClick={() => setShowMenu(false)}
+                >
+                  Ro'yxatdan o'tish
+                </Link>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Social Buttons Panel with Animations */}
+      {/* Logout Modal */}
       <AnimatePresence>
-        {showButtons && (
+        {showLogoutModal && (
           <motion.div
-            className="mt-4 flex flex-col gap-2 absolute right-5 top-[60px] z-50"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {/** Telegram */}
-            <motion.a
-              href="https://t.me/mebelberluc"
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.05, x: 5 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex"
-            >
-              <Button width="300px" icon={<RiTelegram2Fill className="text-lg" />} text="Telegram" />
-            </motion.a>
-
-            {/** Instagram */}
-            <motion.a
-              href="https://instagram.com/_berluc_"
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.05, x: 5 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex"
-            >
-              <Button width="300px" icon={<FaInstagram className="text-lg" />} text="Instagram" />
-            </motion.a>
-
-            {/** TikTok */}
-            <motion.a
-              href="https://www.tiktok.com/@berluc.uzb"
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.05, x: 5 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex"
-            >
-              <Button width="300px" icon={<IoLogoTiktok className="text-lg" />} text="TikTok" />
-            </motion.a>
-
-            {/** Youtube */}
-            <motion.a
-              href="https://www.youtube.com/@BERLUCMEBEL"
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.05, x: 5 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex"
-            >
-              <Button width="300px" icon={<FaYoutube className="text-lg" />} text="Youtube" />
-            </motion.a>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal */}
-      <AnimatePresence>
-        {modalOpen && (
-          <motion.div
-            className="fixed inset-0 bg-[white] bg-opacity-50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="max-w-[744px] mx-auto bg-white max-md:px-4 p-6 rounded-lg">
-              <h2 className="text-[80px] mb-4 max-md:text-2xl max-md:text-center max-md:font-semibold">
-                Отправить заявку
-              </h2>
-              <p className="text-2xl mb-4 text-center max-md:text-[16px]">
-                Заполните форму и мы свяжемся с вами
-              </p>
-              <input
-                type="text"
-                placeholder="Имя"
-                className="text-[#989898] py-2 px-0.5 w-full border-b border-black mb-6"
-              />
-              <input
-                type="text"
-                placeholder="Номер телефона"
-                className="text-[#989898] py-2 px-0.5 w-full border-b border-black mb-8"
-              />
-              <Button text="Отправить" />
-              <div className="flex mt-6 gap-4 md:items-center max-md:gap-2">
-                <input type="checkbox" id="check" className="w-6 h-6 accent-[#989898]" />
-                <label htmlFor="check" className="cursor-pointer max-md:text-sm">
-                  Нажимая на кнопку, вы даете согласие на обработку персональных данных и соглашаетесь с&nbsp;
-                  <Link to="/privacy-policy" className="font-medium">политикой конфиденциальности</Link>
-                </label>
-              </div>
-            </div>
-
-            <button
-              onClick={handleModalClose}
-              className="absolute top-8 right-8 text-black text-3xl z-50 max-md:text-xl max-md:top-4 max-md:right-4"
+            <motion.div
+              className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.3 }}
             >
-              <AiOutlineClose />
-            </button>
+              <h2 className="text-lg font-medium mb-4 text-center">Chiqishni tasdiqlaysizmi?</h2>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+                >
+                  Otmena
+                </button>
+                <button
+                  onClick={confirmLogout}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                >
+                  Chiqish
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
